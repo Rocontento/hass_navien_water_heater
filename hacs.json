@@ -1,6 +1,5 @@
-
 {
-  "name": "Navien Water Heater Custom Integration",
-  "domains": ["water_heater","sensor"],
+  "name": "Navien NaviLink Water Heater",
+  "homeassistant": "2024.6.0",
   "render_readme": true
 }

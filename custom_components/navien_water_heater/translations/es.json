@@ -1,0 +1,88 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Cuenta NaviLink",
+        "description": "Inicia sesión con tus credenciales de NaviLink. Todos los calentadores de la cuenta se añaden automáticamente.",
+        "data": {
+          "username": "Usuario",
+          "password": "Contraseña",
+          "polling_interval": "Intervalo de consulta (segundos)"
+        },
+        "data_description": {
+          "polling_interval": "Cada cuánto se pide el estado a cada calentador. 30 segundos es un buen equilibrio entre rapidez de respuesta y carga."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Volver a autenticar NaviLink",
+        "description": "La nube de NaviLink rechazó la contraseña guardada de {username}. Introduce la contraseña actual.",
+        "data": {
+          "password": "Contraseña"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Credenciales de NaviLink no válidas",
+      "cannot_connect": "No se pudo conectar con la nube de NaviLink",
+      "unknown": "Error inesperado"
+    },
+    "abort": {
+      "already_configured": "Esta cuenta de NaviLink ya está configurada",
+      "no_devices": "No se encontró ningún dispositivo NaviLink en esta cuenta",
+      "reauth_successful": "La reautenticación se completó correctamente",
+      "reauth_failed": "No se pudo iniciar la reautenticación"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones de NaviLink",
+        "data": {
+          "polling_interval": "Intervalo de consulta (segundos)"
+        },
+        "data_description": {
+          "polling_interval": "Cada cuánto se pide el estado a cada calentador."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "hot_water_in_use": { "name": "Consumo de agua caliente" },
+      "burner": { "name": "Quemador" },
+      "problem": { "name": "Problema" },
+      "warm_weather_shutdown": { "name": "Parada por clima cálido" },
+      "freeze_protection": { "name": "Protección antihielo" }
+    },
+    "button": {
+      "refresh": { "name": "Actualizar" }
+    },
+    "number": {
+      "target_temperature": { "name": "Temperatura objetivo" }
+    },
+    "sensor": {
+      "heating_capacity": { "name": "Potencia de calentamiento" },
+      "target_temperature": { "name": "Temperatura objetivo" },
+      "average_inlet_temperature": { "name": "Temperatura media de entrada" },
+      "average_outlet_temperature": { "name": "Temperatura media de salida" },
+      "total_flow_rate": { "name": "Caudal total de agua caliente" },
+      "total_burner_output": { "name": "Potencia total del quemador" },
+      "total_gas_used": { "name": "Gas total consumido" },
+      "error_code": { "name": "Código de error" },
+      "sub_error_code": { "name": "Subcódigo de error" },
+      "last_update": { "name": "Última actualización" },
+      "outlet_temperature": { "name": "Temperatura del agua caliente" },
+      "inlet_temperature": { "name": "Temperatura de entrada" },
+      "flow_rate": { "name": "Caudal de agua caliente" },
+      "burner_output": { "name": "Potencia del quemador" },
+      "gas_used": { "name": "Gas consumido" },
+      "inner_temperature": { "name": "Temperatura interna" },
+      "total_operated_time": { "name": "Tiempo total de funcionamiento" },
+      "fan_speed": { "name": "Velocidad del ventilador" }
+    },
+    "switch": {
+      "power": { "name": "Encendido" },
+      "recirculation": { "name": "Recirculación" }
+    }
+  }
+}

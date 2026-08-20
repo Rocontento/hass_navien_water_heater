@@ -1,24 +1,121 @@
-# Navien Water Heater Custom Integration
-Control and monitor the state of Navien water heaters which are connected to the Navien cloud portal via a [NaviLink or NaviLink Lite](https://www.navieninc.com/accessories/navilink) control system.
+# Navien NaviLink Water Heater Custom Integration
+
+Control and monitor Navien water heaters connected to the Navien cloud through a
+[NaviLink or NaviLink Lite](https://www.navieninc.com/accessories/navilink) gateway.
+
+**One config entry covers your whole NaviLink account.** Every water heater on the
+account is discovered automatically and each one becomes its own device in Home
+Assistant, addressed by MAC address. Adding a heater in the NaviLink app and
+reloading the integration is enough to pick it up.
+
+## What you get, per water heater
+
+| Platform | Entity | Notes |
+| --- | --- | --- |
+| `water_heater` | The heater itself | Target temperature, on/off, away mode, current temperature |
+| `switch` | Power | Same on/off as the water heater entity, handy in automations |
+| `switch` | Recirculation | Only when the gateway reports Hot Button / on demand support |
+| `number` | Target temperature | The setpoint as a plain slider |
+| `sensor` | Hot water temperature, inlet temperature | |
+| `sensor` | Hot water flow | Volume flow rate; Home Assistant converts to your units |
+| `sensor` | Burner output | Instantaneous heat output in watts |
+| `sensor` | Gas used | Total increasing, works with the Energy dashboard |
+| `sensor` | Heating capacity | Burner modulation, in percent |
+| `sensor` | Target temperature, error code, last update | Diagnostic |
+| `binary_sensor` | Hot water in use, Burner | Derived from flow and modulation |
+| `binary_sensor` | Problem | On whenever the heater reports a non-zero error code |
+| `button` | Refresh | Ask a heater for a fresh status straight away |
+
+Cascade installations get one set of per-unit sensors for every physical unit plus
+channel-wide totals.
+
+Fields your gateway reports that the integration has no curated name for are still
+exposed, as diagnostic sensors disabled by default. Enable them from the device
+page if you need them, and please open an issue so they can be named properly.
+
+Diagnostics are supported: **Settings → Devices & Services → Navien → ⋮ →
+Download diagnostics** gives a redacted dump of everything the gateway reports,
+which is the fastest way to get a problem looked at.
 
 ## Installation
-To install this integration, you can use HACS to perform the installation or you can do it manually. If you want to use HACS, you will first need to install the HACS integration which can be found at https://hacs.xyz/. 
 
-To install the integration with HACS:
-1. Navigate to HACS and add a custom repository  
-    **URL:** https://github.com/nikshriv/hass_navien_water_heater
-    **Category:** Integration
-2. Install module as usual
-3. Restart Home Assistant
+Requires Home Assistant 2024.6 or newer.
 
-For manual installation:
-1. Install the File Editor add-on from the HA Addon Store.
-2. Use the File Editor to create a directory called custom_components in your /config directory
-3. Create another directory called navien_water_heater in the custom_components directory.
-4. Clone this repository
-5. Upload the entire content of the navien_water_heater directory from the repository into the navien_water_heater directory you created
-6. Restart Home Assistant
-7. Go to Device and Services under Settings in Home Assistant and add the Navien integration.
+**HACS**
+1. HACS → three-dot menu → Custom repositories
+   **URL:** `https://github.com/rocontento/hass_navien_water_heater`
+   **Category:** Integration
+2. Install, then restart Home Assistant.
+3. Settings → Devices & Services → Add Integration → Navien.
+
+**Manual**
+1. Copy `custom_components/navien_water_heater` into your `config/custom_components`
+   directory.
+2. Restart Home Assistant and add the integration as above.
+
+## Configuration
+
+You are asked for your NaviLink username, password and a polling interval. The
+polling interval can be changed later without re-adding the integration through
+**Configure** on the integration card. Between polls the integration also reacts
+to whatever the gateway pushes on its own, so a longer interval costs less than
+you might expect; 30 seconds is a good default.
+
+If Navien ever rejects the stored password, Home Assistant raises a re-auth prompt
+instead of silently going dead.
+
+## Upgrading from 1.x
+
+Version 1 stored **one config entry per water heater** and remembered which heater
+it belonged to by its *position* in the NaviLink device list. Adding a heater to
+the account reshuffled that list, so an existing entry silently started pointing at
+a different heater, and the original one stopped responding in Home Assistant while
+continuing to work fine in the NaviLink app.
+
+On first start, 2.0 migrates automatically:
+
+- Old entries are converted to a single account-wide entry. Their devices and
+  entities are handed over to the surviving entry first, so entity ids, names and
+  area assignments are kept.
+- Heaters are matched by MAC address from now on, so the device list order no
+  longer matters.
+- Entity unique ids are unchanged, so history carries over.
+
+Three sensors did change units, because they now carry proper device classes and
+let Home Assistant do the conversion for your locale. Long-term statistics for
+these may report a unit change once:
+
+| Sensor | Before | Now |
+| --- | --- | --- |
+| Burner output | `kcal/hr` or `BTU/hr` | watts |
+| Hot water flow | `liters/min` or `gal/min` | L/min, converted for display |
+| Gas used | m³ or ft³ | m³, converted for display |
+
+## Troubleshooting
+
+Turn on debug logging to see the raw traffic:
+
+```yaml
+logger:
+  default: warning
+  logs:
+    custom_components.navien_water_heater: debug
+```
+
+The integration keeps a single MQTT connection open for the whole account and
+rebuilds it with exponential backoff whenever the cloud drops it, so transient
+"connection lost" messages in the log are normal and self-healing.
+
+## Development
+
+```bash
+pip install -r requirements_test.txt
+pytest
+```
+
+The test suite runs the integration inside a real Home Assistant against a
+simulated NaviLink cloud (`tests/fake_cloud.py`), covering unit conversion, the
+multi-heater addressing, migration from 1.x, service calls and reconnection.
 
 ## Preheat/Recirculation "Hot Button" functionality
 For water heaters with hot water recirculation functionality (e.g. A or A2) via dedicated External Loop or [NaviCirc](https://www.navieninc.com/accessories/navicirc), you will also be able to directly control [Hot Button](https://www.navieninc.com/accessories/hotbutton) functionality if a Hot Button PCB is also installed. This PCB is pre-installed on A2 models, but must be [installed](https://www.navieninc.com/downloads/hotbutton-installation-instructions-en) as an [add-on kit](https://www.navieninc.com/products/npe-240a/accessories) for the older A models. Before purchasing this add-on kit, check your main PCB's model version (P20 or newer) IAW Step 2.2.4. The physical buttons _do not_ need to be connected to gain hot button functionality through this integration. _Check the NaviLink app to ensure everything is configured properly (Hot Button instead of Schedule options)_. If you install this integration without Hot Button functionality and later enable it, just Reload the integration to add the Recirculation switch entity. **You will have a recirculation switch entity that can be manually controlled via dashboard, voice commands, and/or automation!**
@@ -37,6 +134,11 @@ The preheat/recirculation settings (i.e. parameters) are inconsistently named be
 3. If recirculation does not stay on long enough after Hot Button activation, try increasing to a much higher pipe length.
 
 ## Sample card
+
+> The entity ids below come from a 1.x install. On a fresh 2.x setup they are
+> named after the heater, for example `switch.<heater name>_recirculation` and
+> `sensor.<heater name>_hot_water_flow`. Adjust them to match your own entities.
+
 Here is an example of a card that can be used to monitor and control a water heater including recirculation. It uses the following custom cards:
 - [ApexCharts](https://github.com/RomRider/apexcharts-card)
 - [Mushroom](https://github.com/piitaya/lovelace-mushroom)
