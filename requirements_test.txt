@@ -1,0 +1,4 @@
+# Test dependencies.  The pytest-homeassistant-custom-component version pins the
+# Home Assistant version the suite runs against.
+pytest-homeassistant-custom-component==0.13.195
+AWSIoTPythonSDK>=1.5.4

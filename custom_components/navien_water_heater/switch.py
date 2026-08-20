@@ -1,129 +1,90 @@
-"""Support for Navien NaviLink water heaters On Demand/External Recirculator."""
+"""Switch platform for the Navien NaviLink integration."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Callable, Coroutine
+
 from homeassistant.components.switch import (
     SwitchEntity,
+    SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import DeviceInfo
-from .navien_api import DeviceSorting
+
 from .const import DOMAIN
+from .entity import NavienDescribedEntity
+from .navien_api import NavienAccount, NavienChannel, NavienError
+
+
+@dataclass(frozen=True, kw_only=True)
+class NavienSwitchEntityDescription(SwitchEntityDescription):
+    """Describes a Navien switch."""
+
+    value_fn: Callable[[NavienChannel], bool]
+    set_fn: Callable[[NavienChannel, bool], Coroutine[Any, Any, None]]
+    supported_fn: Callable[[NavienChannel], bool] = lambda _channel: True
+
+
+SWITCHES: tuple[NavienSwitchEntityDescription, ...] = (
+    NavienSwitchEntityDescription(
+        key="power_button",
+        translation_key="power",
+        name="Power",
+        icon="mdi:power",
+        value_fn=lambda channel: channel.power,
+        set_fn=lambda channel, state: channel.async_set_power(state),
+    ),
+    NavienSwitchEntityDescription(
+        key="hot_button",
+        translation_key="recirculation",
+        name="Recirculation",
+        icon="mdi:pump",
+        value_fn=lambda channel: channel.on_demand,
+        set_fn=lambda channel, state: channel.async_set_on_demand(state),
+        supported_fn=lambda channel: channel.supports_on_demand,
+    ),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Set up Navien On Demand switch based on a config entry."""
-    navilink = hass.data[DOMAIN][entry.entry_id]
-    devices = []
-    for channel in navilink.channels.values():
-        if channel.channel_info.get("onDemandUse",2) == 1:
-            devices.append(NavienOnDemandSwitchEntity(navilink, channel))
-        devices.append(NavienPowerSwitchEntity(navilink, channel))        
-    async_add_entities(devices)
+    """Set up the Navien switches."""
+    account: NavienAccount = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities(
+        NavienSwitch(channel, description)
+        for channel in account.channels
+        for description in SWITCHES
+        if description.supported_fn(channel)
+    )
 
 
-class NavienOnDemandSwitchEntity(SwitchEntity):
-    """Define a Navien Hot Button/On Demand/External Recirculator Entity."""
+class NavienSwitch(NavienDescribedEntity, SwitchEntity):
+    """A switchable function of a Navien water heater channel."""
 
-    def __init__(self, navilink, channel):
-        self.navilink = navilink
-        self.channel = channel
-
-    async def async_added_to_hass(self) -> None:
-        """Run when this Entity has been added to HA."""
-        self.channel.register_callback(self.async_write_ha_state)
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Entity being removed from hass."""
-        self.channel.deregister_callback(self.async_write_ha_state)
+    entity_description: NavienSwitchEntityDescription
 
     @property
-    def available(self):
-        """Return if the the device is online or not."""
-        return self.channel.is_available()
+    def is_on(self) -> bool:
+        """Return the current state of this function."""
+        return self.entity_description.value_fn(self.channel)
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device registry information for this entity."""
-        return DeviceInfo(
-            identifiers = {(DOMAIN, self.navilink.device_info.get("deviceInfo",{}).get("macAddress","unknown") + "_" + str(self.channel.channel_number))},
-            manufacturer = "Navien",
-            name = self.navilink.device_info.get("deviceInfo",{}).get("deviceName","unknown") + " CH" + str(self.channel.channel_number)
-        )
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn this function on."""
+        await self._async_set(True)
 
-    @property
-    def name(self):
-        """Return the name of the entity."""
-        return self.navilink.device_info.get("deviceInfo",{}).get("deviceName","UNKNOWN") + " Hot Button CH" + str(self.channel.channel_number)
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn this function off."""
+        await self._async_set(False)
 
-    @property
-    def unique_id(self):
-        """Return the unique ID of the entity."""
-        return self.navilink.device_info.get("deviceInfo",{}).get("macAddress","unknown") + str(self.channel.channel_number) + "hot_button"
-
-    @property
-    def is_on(self):
-        """Return the current On Demand state."""
-        return self.channel.channel_status.get("onDemandUseFlag",False)
-
-    async def async_turn_on(self):
-        """Turn On Hot Button."""
-        await self.channel.set_hot_button_state(True)
-
-    async def async_turn_off(self):
-        """Turn Off Hot Button."""
-        await self.channel.set_hot_button_state(False)
-
-
-class NavienPowerSwitchEntity(SwitchEntity):
-    """Define a Power Switch Entity."""
-
-    def __init__(self, navilink, channel):
-        self.navilink = navilink
-        self.channel = channel
-
-    async def async_added_to_hass(self) -> None:
-        """Run when this Entity has been added to HA."""
-        self.channel.register_callback(self.async_write_ha_state)
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Entity being removed from hass."""
-        self.channel.deregister_callback(self.async_write_ha_state)
-
-    @property
-    def available(self):
-        """Return if the the device is online or not."""
-        return self.channel.is_available()
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device registry information for this entity."""
-        return DeviceInfo(
-            identifiers = {(DOMAIN, self.navilink.device_info.get("deviceInfo",{}).get("macAddress","unknown") + "_" + str(self.channel.channel_number))},
-            manufacturer = "Navien",
-            name = self.navilink.device_info.get("deviceInfo",{}).get("deviceName","unknown") + " CH" + str(self.channel.channel_number)
-        )
-
-    @property
-    def name(self):
-        """Return the name of the entity."""
-        return self.navilink.device_info.get("deviceInfo",{}).get("deviceName","UNKNOWN") + " Power CH" + str(self.channel.channel_number)
-
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of the entity."""
-        return self.navilink.device_info.get("deviceInfo",{}).get("macAddress","unknown") + str(self.channel.channel_number) + "power_button"
-
-    @property
-    def is_on(self):
-        """Return the current On Demand state."""
-        return self.channel.channel_status.get("powerStatus",False)
-
-    async def async_turn_on(self):
-        """Turn On Power."""
-        await self.channel.set_power_state(True)
-
-    async def async_turn_off(self):
-        """Turn Off Power."""
-        await self.channel.set_power_state(False)
+    async def _async_set(self, state: bool) -> None:
+        """Send the command and report failures to the user."""
+        try:
+            await self.entity_description.set_fn(self.channel, state)
+        except NavienError as err:
+            raise HomeAssistantError(
+                f"NaviLink command for {self.channel.name} failed: {err}"
+            ) from err

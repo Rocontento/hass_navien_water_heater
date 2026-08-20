@@ -1,16 +1,17 @@
 {
   "domain": "navien_water_heater",
-  "name": "Navien NaviLink Water Heater Integration",
-  "version": "1.0.1",
+  "name": "Navien NaviLink Water Heater",
+  "version": "2.0.0",
   "config_flow": true,
-  "documentation": "https://www.github.com/nikshriv/hass_navien_water_heater",
+  "documentation": "https://github.com/rocontento/hass_navien_water_heater",
+  "issue_tracker": "https://github.com/rocontento/hass_navien_water_heater/issues",
   "requirements": ["AWSIoTPythonSDK>=1.5.4"],
-  "ssdp": [],
-  "zeroconf": [],
-  "homekit": {},
   "dependencies": [],
+  "after_dependencies": [],
   "codeowners": [
     "@nikshriv"
   ],
-  "iot_class": "cloud_polling"
+  "integration_type": "hub",
+  "iot_class": "cloud_push",
+  "loggers": ["AWSIoTPythonSDK"]
 }

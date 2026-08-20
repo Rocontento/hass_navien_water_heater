@@ -2,35 +2,87 @@
   "config": {
     "step": {
       "user": {
+        "title": "NaviLink account",
+        "description": "Sign in with your NaviLink credentials. Every water heater on the account is added automatically.",
         "data": {
           "username": "Username",
+          "password": "Password",
+          "polling_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "polling_interval": "How often each water heater is asked for a status update. 30 seconds is a good balance between responsiveness and load."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate NaviLink",
+        "description": "The NaviLink cloud rejected the stored password for {username}. Enter the current password.",
+        "data": {
           "password": "Password"
-        },
-        "title": "NaviLink Credentials",
-        "description": "Please enter your NaviLink account credentials"
-      },
-      "pick_gateway": {
-        "data": {
-          "gatewayID": "NaviLink Device"
-        },
-        "title": "Select NaviLink Device",
-        "description": "Please select the NaviLink device you would like to set up. Listed below are the names you assigend to your NaviLink hub when you set it up."
-      },
-      "set_polling_interval": {
-        "data": {
-          "polling_interval": "Polling Interval"
-        },
-        "title": "NaviLink Polling Interval",
-        "description": "Indicate how often you would like to poll the NaviLink Hub (Minumum allowed interval is 10 seconds, maximum is 120 seconds.)"
+        }
       }
     },
     "error": {
-      "invalid_auth": "Invalid NaviLink user credentials",
-      "unknown": "Unknown error"
+      "invalid_auth": "Invalid NaviLink credentials",
+      "cannot_connect": "Could not reach the NaviLink cloud",
+      "unknown": "Unexpected error"
     },
     "abort": {
-      "reauth_successful": "Reauthorization successful",
-      "no_devices_available": "No devices available with the provided account credentials, aborting..."
+      "already_configured": "This NaviLink account is already set up",
+      "no_devices": "No NaviLink devices were found on this account",
+      "reauth_successful": "Re-authentication was successful",
+      "reauth_failed": "Re-authentication could not be started"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "NaviLink options",
+        "data": {
+          "polling_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "polling_interval": "How often each water heater is asked for a status update."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "hot_water_in_use": { "name": "Hot water in use" },
+      "burner": { "name": "Burner" },
+      "problem": { "name": "Problem" },
+      "warm_weather_shutdown": { "name": "Warm weather shutdown" },
+      "freeze_protection": { "name": "Freeze protection" }
+    },
+    "button": {
+      "refresh": { "name": "Refresh" }
+    },
+    "number": {
+      "target_temperature": { "name": "Target temperature" }
+    },
+    "sensor": {
+      "heating_capacity": { "name": "Heating capacity" },
+      "target_temperature": { "name": "Target temperature" },
+      "average_inlet_temperature": { "name": "Average inlet temperature" },
+      "average_outlet_temperature": { "name": "Average outlet temperature" },
+      "total_flow_rate": { "name": "Total hot water flow" },
+      "total_burner_output": { "name": "Total burner output" },
+      "total_gas_used": { "name": "Total gas used" },
+      "error_code": { "name": "Error code" },
+      "sub_error_code": { "name": "Sub error code" },
+      "last_update": { "name": "Last update" },
+      "outlet_temperature": { "name": "Hot water temperature" },
+      "inlet_temperature": { "name": "Inlet temperature" },
+      "flow_rate": { "name": "Hot water flow" },
+      "burner_output": { "name": "Burner output" },
+      "gas_used": { "name": "Gas used" },
+      "inner_temperature": { "name": "Internal temperature" },
+      "total_operated_time": { "name": "Total operating time" },
+      "fan_speed": { "name": "Fan speed" }
+    },
+    "switch": {
+      "power": { "name": "Power" },
+      "recirculation": { "name": "Recirculation" }
     }
   }
 }
