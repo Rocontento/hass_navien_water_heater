@@ -1,7 +1,7 @@
 # Navien NaviLink Water Heater Custom Integration
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub last commit](https://img.shields.io/github/last-commit/Rocontento/hass_navien_water_heater)](https://github.com/Rocontento/hass_navien_water_heater/commits/main)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Rocontento/hass_navien_water_heater)](https://github.com/Rocontento/hass_navien_water_heater/commits/HEAD)
 
 Control and monitor Navien water heaters connected to the Navien cloud through a
 [NaviLink or NaviLink Lite](https://www.navieninc.com/accessories/navilink) gateway.
